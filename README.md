@@ -165,6 +165,12 @@ PRODUCTION_DB_SSL=true
 DEBUG=false
 ```
 
+**Important:** The `.env` file must be placed in the current working directory from where you run the MySQL MCP server. The server will automatically look for a `.env` file in this location. If you're using:
+
+- **Global installation**: The `.env` file should be in the directory where you run the commands
+- **NPX method**: The `.env` file should be in the directory where you run `npx mysql-query-mcp-server`
+- **MCP command method**: You can skip the `.env` file entirely and use the embedded environment variables
+
 You can copy the included `.env.example` file to get started:
 ```bash
 cp .env.example .env
@@ -274,6 +280,14 @@ Get detailed information about your database:
 - Process list
 - Available databases
 
+### 3. environments
+
+List all configured environments from your setup:
+
+```
+Use the environments tool to show me which database environments are available.
+```
+
 ## Security Considerations
 
 - ✅ Only read-only queries are allowed (SELECT, SHOW, DESCRIBE)
@@ -282,25 +296,17 @@ Get detailed information about your database:
 - ✅ Query timeouts prevent runaway operations
 - ⚠️ Keep your `.env` file secure and never commit it to source control
 
-### 3. environments
-
-List all configured environments available in your setup. This tool will show all environments that have been successfully configured, either through:
-- Environment variables in the MCP configuration
-- A `.env` file in the project directory
-- System environment variables
-
-This is helpful for verifying which database environments are properly configured and available for querying.
-
 ## Troubleshooting
 
 ### Connection Issues
 
 If you're having trouble connecting:
 
-1. Verify your database credentials in `.env`
-2. Ensure the MySQL server is running and accessible
-3. Check for firewall rules blocking connections
-4. Enable debug mode for detailed logs: `DEBUG=true mysql-query-mcp`
+1. Verify your database credentials in `.env` or your MCP configuration
+2. Check the location of your `.env` file (it must be in the current working directory)
+3. Ensure the MySQL server is running and accessible
+4. Check for firewall rules blocking connections
+5. Enable debug mode for detailed logs: `DEBUG=true mysql-query-mcp`
 
 ### Common Errors
 
