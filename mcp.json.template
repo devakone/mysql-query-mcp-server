@@ -1,0 +1,9 @@
+{
+  "mysql": {
+    "name": "MySQL Query MCP",
+    "description": "MySQL read-only query access through MCP",
+    "type": "bin",
+    "enabled": true,
+    "bin": "mysql-query-mcp"
+  }
+} 

@@ -1,0 +1,39 @@
+# Source code (since we're publishing compiled code)
+src/
+
+# Git files
+.git/
+.gitignore
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+logs/
+*.log
+mcp-debug.log
+transport-debug.log
+
+# Test files
+test/
+coverage/
+
+# Development configuration
+.eslintrc
+.prettierrc
+tsconfig.json
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Build artifacts
+node_modules/
+
+# Miscellaneous
+.DS_Store
+Thumbs.db 
