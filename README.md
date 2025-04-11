@@ -45,10 +45,11 @@ npx mysql-query-mcp-server
 
 ## Setup Instructions
 
-### 1. Configure Your AI Tool to Use the MCP Server
+### Configure Your AI Tool to Use the MCP Server
 
-1. Create or edit your MCP configuration file (e.g., `.cursor/mcp.json` for Cursor IDE):
+Create or edit your MCP configuration file (e.g., `.cursor/mcp.json` for Cursor IDE):
 
+**Basic Configuration:**
 ```json
 {
   "mysql": {
@@ -61,8 +62,7 @@ npx mysql-query-mcp-server
 }
 ```
 
-For more advanced configuration with environment variables embedded in the MCP config:
-
+**Comprehensive Configuration with Database Credentials:**
 ```json
 {
   "mysql": {
@@ -101,94 +101,30 @@ For more advanced configuration with environment variables embedded in the MCP c
 }
 ```
 
-#### Choosing the Right Configuration Approach
+### Choosing the Right Configuration Approach
 
 There are two ways to configure the MySQL MCP server:
 
 1. **Binary Configuration** (`type: "bin"`, `bin: "mysql-query-mcp"`)
    - **When to use**: When you've installed the package globally (`npm install -g mysql-query-mcp-server`)
-   - **Pros**: Simpler configuration, cleaner MCP file
-   - **Cons**: Requires global installation, uses a separate `.env` file for database credentials
+   - **Pros**: Simpler configuration
+   - **Cons**: Requires global installation
 
 2. **Command Configuration** (`command: "npx"`, `args: ["mysql-query-mcp-server@latest"]`)
    - **When to use**: When you want to use the latest version without installing it globally
    - **Pros**: No global installation required, all configuration in one file
-   - **Cons**: More complex configuration, credentials in MCP file (which may be preferred in some cases)
+   - **Cons**: More complex configuration
 
 Choose the approach that best fits your workflow. Both methods will work correctly with any AI assistant that supports MCP.
 
-**Important Configuration Notes:**
+### Important Configuration Notes
+
 - You must use the full environment names: LOCAL_, DEVELOPMENT_, STAGING_, PRODUCTION_
 - Abbreviations like DEV_ or PROD_ will not work
 - Global settings like DEBUG, MCP_MYSQL_SSL apply to all environments
 - At least one environment (typically "local") must be configured
 - You only need to configure the environments you plan to use
-
-### 2. Alternative: Using a .env File
-
-If you prefer to keep your database credentials in a separate file, you can use a `.env` file:
-
-```env
-# Local Database
-LOCAL_DB_HOST=localhost
-LOCAL_DB_USER=root
-LOCAL_DB_PASS=your_password
-LOCAL_DB_NAME=your_database
-LOCAL_DB_PORT=3306
-LOCAL_DB_SSL=false
-
-# Development Database (optional)
-DEVELOPMENT_DB_HOST=dev.example.com
-DEVELOPMENT_DB_USER=dev_user
-DEVELOPMENT_DB_PASS=dev_password
-DEVELOPMENT_DB_NAME=dev_database
-DEVELOPMENT_DB_PORT=3306
-DEVELOPMENT_DB_SSL=true
-
-# Staging Database (optional)
-STAGING_DB_HOST=staging.example.com
-STAGING_DB_USER=staging_user
-STAGING_DB_PASS=staging_password
-STAGING_DB_NAME=staging_database
-STAGING_DB_PORT=3306
-STAGING_DB_SSL=true
-
-# Production Database (optional)
-PRODUCTION_DB_HOST=prod.example.com
-PRODUCTION_DB_USER=prod_user
-PRODUCTION_DB_PASS=prod_password
-PRODUCTION_DB_NAME=prod_database
-PRODUCTION_DB_PORT=3306
-PRODUCTION_DB_SSL=true
-
-# Debug Mode
-DEBUG=false
-```
-
-**Important:** The `.env` file must be placed in the current working directory from where you run the MySQL MCP server. The server will automatically look for a `.env` file in this location. If you're using:
-
-- **Global installation**: The `.env` file should be in the directory where you run the commands
-- **NPX method**: The `.env` file should be in the directory where you run `npx mysql-query-mcp-server`
-- **MCP command method**: You can skip the `.env` file entirely and use the embedded environment variables
-
-You can copy the included `.env.example` file to get started:
-```bash
-cp .env.example .env
-```
-
-When using a `.env` file, your MCP configuration can be simplified to:
-
-```json
-{
-  "mysql": {
-    "name": "MySQL Query MCP",
-    "description": "MySQL read-only query access through MCP",
-    "type": "bin",
-    "enabled": true,
-    "bin": "mysql-query-mcp"
-  }
-}
-```
+- For security reasons, consider using environment variables or secure credential storage for production credentials
 
 ## Configuration Options
 
@@ -250,7 +186,11 @@ Use the info tool to check the status of our production database.
 
 #### 3. environments
 
-List all configured environments from your `.env` file.
+List all configured environments from your configuration:
+
+```
+Use the environments tool to show me which database environments are available.
+```
 
 ## Available Tools
 
@@ -282,7 +222,7 @@ Get detailed information about your database:
 
 ### 3. environments
 
-List all configured environments from your setup:
+List all configured environments from your configuration:
 
 ```
 Use the environments tool to show me which database environments are available.
@@ -294,7 +234,7 @@ Use the environments tool to show me which database environments are available.
 - ✅ Each environment has its own isolated connection pool
 - ✅ SSL connections are supported for production environments
 - ✅ Query timeouts prevent runaway operations
-- ⚠️ Keep your `.env` file secure and never commit it to source control
+- ⚠️ Consider using secure credential management for database credentials
 
 ## Troubleshooting
 
@@ -302,11 +242,10 @@ Use the environments tool to show me which database environments are available.
 
 If you're having trouble connecting:
 
-1. Verify your database credentials in `.env` or your MCP configuration
-2. Check the location of your `.env` file (it must be in the current working directory)
-3. Ensure the MySQL server is running and accessible
-4. Check for firewall rules blocking connections
-5. Enable debug mode for detailed logs: `DEBUG=true mysql-query-mcp`
+1. Verify your database credentials in your MCP configuration
+2. Ensure the MySQL server is running and accessible
+3. Check for firewall rules blocking connections
+4. Enable debug mode by setting DEBUG=true in your configuration
 
 ### Common Errors
 
