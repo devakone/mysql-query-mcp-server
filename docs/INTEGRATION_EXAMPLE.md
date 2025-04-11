@@ -2,30 +2,71 @@
 
 This document provides examples of how to integrate the MySQL MCP server with various AI assistants and use it effectively.
 
-## Cursor IDE Example
+## Configuration Example
+
+Below is an example of a correct MCP configuration:
+
+```json
+"mysql": {
+  "command": "npx",
+  "args": ["mysql-query-mcp-server@latest"],
+  "env": {
+    "LOCAL_DB_HOST": "localhost",
+    "LOCAL_DB_USER": "root",
+    "LOCAL_DB_PASS": "<YOUR_LOCAL_DB_PASSWORD>",
+    "LOCAL_DB_NAME": "your_database",
+    "LOCAL_DB_PORT": "3306",
+    
+    "DEVELOPMENT_DB_HOST": "dev.example.com",
+    "DEVELOPMENT_DB_USER": "<DEV_DB_USER>",
+    "DEVELOPMENT_DB_PASS": "<DEV_DB_PASSWORD>",
+    "DEVELOPMENT_DB_NAME": "your_database",
+    "DEVELOPMENT_DB_PORT": "3306",
+    
+    "STAGING_DB_HOST": "staging.example.com",
+    "STAGING_DB_USER": "<STAGING_DB_USER>",
+    "STAGING_DB_PASS": "<STAGING_DB_PASSWORD>",
+    "STAGING_DB_NAME": "your_database",
+    "STAGING_DB_PORT": "3306",
+    
+    "PRODUCTION_DB_HOST": "prod.example.com",
+    "PRODUCTION_DB_USER": "<PROD_DB_USER>",
+    "PRODUCTION_DB_PASS": "<PROD_DB_PASSWORD>",
+    "PRODUCTION_DB_NAME": "your_database",
+    "PRODUCTION_DB_PORT": "3306",
+    
+    "DEBUG": "true",
+    "MCP_MYSQL_SSL": "true",
+    "MCP_MYSQL_REJECT_UNAUTHORIZED": "false"
+  }
+}
+```
+
+**Important Notes**:
+- Use `LOCAL_`, `DEVELOPMENT_`, `STAGING_`, and `PRODUCTION_` prefixes for environments
+- Do not use abbreviated versions like `DEV_` or `PROD_`
+- Set `MCP_MYSQL_SSL` to `true` for secure connections
+- Use `MCP_MYSQL_REJECT_UNAUTHORIZED` for self-signed certificates
+
+## AI Tool Integration
 
 ### Setup
 
 1. Start the MySQL MCP server:
 ```bash
-cursor-mysql-mcp
+mysql-query-mcp-server
 ```
 
-2. Configure Cursor IDE to use the MySQL MCP server:
-   - In Cursor, go to Settings → Extensions → Model Context Protocol
-   - Add a new MCP connection with:
-     - Name: MySQL
-     - URL: http://localhost:3340
-     - Save the connection
+2. Configure your AI tool to use the MySQL MCP server (specific steps depend on your AI tool)
 
 ### Usage Examples
 
 #### Basic Query Example
 ```
-@Claude I need to get a list of users from my database. Can you help?
+I need to get a list of users from my database. Can you help?
 ```
 
-Claude might respond:
+Your AI assistant might respond:
 ```
 I can help you query your database. Let me execute a SELECT query to get the users.
 
@@ -41,10 +82,10 @@ Use the local environment.
 
 #### Complex Query Example
 ```
-@Claude Can you show me the top 5 products by sales in the last month?
+Can you show me the top 5 products by sales in the last month?
 ```
 
-Claude might respond:
+Your AI assistant might respond:
 ```
 I'll help you get that information. Let me query your database:
 
@@ -66,14 +107,12 @@ LIMIT 5;
 Which environment would you like me to run this on?
 ```
 
-## Windsurf Integration
-
 ### Querying Database Structure
 ```
-@Claude, can you show me the structure of the customers table?
+Can you show me the structure of the customers table?
 ```
 
-Claude might respond:
+Your AI assistant might respond:
 ```
 I'll help you examine the structure of the customers table. Let me run:
 
@@ -84,10 +123,10 @@ This will show the columns and their data types. Which environment should I use?
 
 ### Data Analysis Example
 ```
-@Claude, analyze the age distribution of our users.
+Analyze the age distribution of our users.
 ```
 
-Claude might respond:
+Your AI assistant might respond:
 ```
 Let me get that data for you. I'll run:
 
@@ -112,34 +151,62 @@ ORDER BY
 Which environment would you like to use?
 ```
 
-## Claude Desktop Integration
-
 ### General Information Retrieval
 ```
-@Claude What databases do we have available in the development environment?
+What databases do we have available in the development environment?
 ```
 
-Claude might respond:
+Your AI assistant might respond:
 ```
 Let me check what databases are available in the development environment. I'll use the MySQL MCP tools to get this information.
 
 Would you like me to run this query on the development environment?
 ```
 
-After confirmation, Claude will list all available databases.
+After confirmation, the AI assistant will list all available databases.
 
 ### Debugging Database Connections
 ```
-@Claude I'm having trouble connecting to the database. Can you help diagnose?
+I'm having trouble connecting to the database. Can you help diagnose?
 ```
 
-Claude might respond:
+Your AI assistant might respond:
 ```
 I can help diagnose database connection issues. Let me check the database status:
 
 SHOW STATUS LIKE 'Conn%';
 
 Which environment are you having trouble with?
+```
+
+## Using the Three Main Tools
+
+The MySQL MCP server provides three main tools that your AI assistant can use:
+
+### 1. query
+
+Execute read-only SQL queries against a specific environment:
+
+```
+Use the query tool to run:
+SELECT * FROM customers WHERE signup_date > '2023-01-01' LIMIT 10;
+on the development environment
+```
+
+### 2. info
+
+Get detailed information about your database:
+
+```
+Use the info tool to check the status of our production database.
+```
+
+### 3. environments
+
+List all configured database environments:
+
+```
+Please use the environments tool to show me all available database environments.
 ```
 
 ## Tips for Effective Integration
@@ -159,11 +226,11 @@ Which environment are you having trouble with?
 
 5. **Remember read-only limitations**: The MCP server only allows SELECT, SHOW, and DESCRIBE queries.
 
-6. **Check your connection**: If Claude says it can't connect, make sure your MySQL MCP server is running.
+6. **Check your connection**: If your AI assistant says it can't connect, make sure your MySQL MCP server is running.
 
 7. **Include timeouts for complex queries**: For queries that might take longer:
    ```
-   @Claude Run this query on development with a 60-second timeout:
+   Run this query on development with a 60-second timeout:
    
    SELECT * FROM large_table WHERE complex_condition;
    ``` 

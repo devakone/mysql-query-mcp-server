@@ -1,6 +1,6 @@
 {
   "name": "mysql-query-mcp-server",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "MySQL Query MCP server for AI assistants - execute read-only MySQL queries from Cursor IDE, Windsurf, or Claude Desktop",
   "main": "dist/index.js",
   "bin": {

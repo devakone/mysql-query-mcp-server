@@ -47,6 +47,7 @@ LOCAL_DB_HOST=localhost
 LOCAL_DB_USER=root
 LOCAL_DB_PASS=your_password
 LOCAL_DB_NAME=your_database
+LOCAL_DB_PORT=3306
 LOCAL_DB_SSL=false
 
 # Development Database (optional)
@@ -54,6 +55,7 @@ DEVELOPMENT_DB_HOST=dev.example.com
 DEVELOPMENT_DB_USER=dev_user
 DEVELOPMENT_DB_PASS=dev_password
 DEVELOPMENT_DB_NAME=dev_database
+DEVELOPMENT_DB_PORT=3306
 DEVELOPMENT_DB_SSL=true
 
 # Staging Database (optional)
@@ -61,6 +63,7 @@ STAGING_DB_HOST=staging.example.com
 STAGING_DB_USER=staging_user
 STAGING_DB_PASS=staging_password
 STAGING_DB_NAME=staging_database
+STAGING_DB_PORT=3306
 STAGING_DB_SSL=true
 
 # Production Database (optional)
@@ -68,7 +71,11 @@ PRODUCTION_DB_HOST=prod.example.com
 PRODUCTION_DB_USER=prod_user
 PRODUCTION_DB_PASS=prod_password
 PRODUCTION_DB_NAME=prod_database
+PRODUCTION_DB_PORT=3306
 PRODUCTION_DB_SSL=true
+
+# Debug Mode
+DEBUG=false
 ```
 
 **Important Notes**:
@@ -95,6 +102,7 @@ touch ~/.cursor/mcp.json
 ```
 
 3. Add the MySQL Query MCP configuration to your `.cursor/mcp.json` file:
+
 ```json
 {
   "mysql": {
@@ -118,43 +126,116 @@ This tells Cursor to use the `mysql-query-mcp` binary when accessing the MySQL Q
 | [ENV]_DB_USER | Database username | - |
 | [ENV]_DB_PASS | Database password | - |
 | [ENV]_DB_NAME | Database name | - |
+| [ENV]_DB_PORT | Database port | 3306 |
 | [ENV]_DB_SSL | Enable SSL connection | false |
 
 ## Integration with AI Assistants
 
-### Cursor IDE
+Your AI assistant can interact with MySQL databases through the MCP server. Here are some examples:
 
-1. Open Cursor IDE
-2. Ensure your `.cursor/mcp.json` file includes the MySQL Query MCP configuration
-3. Start querying your databases with Claude!
+Example queries:
 
-Example query:
 ```
-@Claude, can you show me the first 10 users from the database?
+Can you use the query tool to show me the first 10 users from the database? Use the local environment.
 ```
 
-### Windsurf
+```
+I need to analyze our sales data. Can you run a SQL query to get the total sales per region for last month from the development database?
+```
 
-1. Launch Windsurf browser
-2. Configure the MySQL Query MCP extension with your database credentials
-3. Start browsing with database access enabled
+```
+Can you use the info tool to check what tables are available in the staging database?
+```
 
-### Claude Desktop
+```
+Can you list all the available database environments we have configured?
+```
 
-1. Open Claude Desktop
-2. Configure the MySQL Query MCP extension
-3. Begin database interactions with Claude
+### Using MySQL MCP Tools
+
+The MySQL Query MCP server provides three main tools that your AI assistant can use:
+
+#### 1. query
+
+Execute read-only SQL queries against a specific environment:
+
+```
+Use the query tool to run:
+SELECT * FROM customers WHERE signup_date > '2023-01-01' LIMIT 10;
+on the development environment
+```
+
+#### 2. info
+
+Get detailed information about your database:
+
+```
+Use the info tool to check the status of our production database.
+```
+
+#### 3. environments
+
+List all configured database environments:
+
+```
+Please use the environments tool to show me all available database environments.
+```
+
+### MCP Configuration Example
+
+Here's an example of a proper configuration for your MCP server:
+
+```json
+"mysql": {
+  "command": "npx",
+  "args": ["mysql-query-mcp-server@latest"],
+  "env": {
+    "LOCAL_DB_HOST": "localhost",
+    "LOCAL_DB_USER": "root",
+    "LOCAL_DB_PASS": "<YOUR_LOCAL_DB_PASSWORD>",
+    "LOCAL_DB_NAME": "your_database",
+    "LOCAL_DB_PORT": "3306",
+    
+    "DEVELOPMENT_DB_HOST": "dev.example.com",
+    "DEVELOPMENT_DB_USER": "<DEV_USER>",
+    "DEVELOPMENT_DB_PASS": "<DEV_PASSWORD>",
+    "DEVELOPMENT_DB_NAME": "your_database",
+    "DEVELOPMENT_DB_PORT": "3306",
+    
+    "STAGING_DB_HOST": "staging.example.com",
+    "STAGING_DB_USER": "<STAGING_USER>",
+    "STAGING_DB_PASS": "<STAGING_PASSWORD>",
+    "STAGING_DB_NAME": "your_database",
+    "STAGING_DB_PORT": "3306",
+    
+    "PRODUCTION_DB_HOST": "prod.example.com",
+    "PRODUCTION_DB_USER": "<PRODUCTION_USER>",
+    "PRODUCTION_DB_PASS": "<PRODUCTION_PASSWORD>",
+    "PRODUCTION_DB_NAME": "your_database",
+    "PRODUCTION_DB_PORT": "3306",
+    
+    "DEBUG": "true",
+    "MCP_MYSQL_SSL": "true",
+    "MCP_MYSQL_REJECT_UNAUTHORIZED": "false"
+  }
+}
+```
+
+**Important Notes:**
+- You must use the full environment names: LOCAL_, DEVELOPMENT_, STAGING_, PRODUCTION_
+- Abbreviations like DEV_ or PROD_ will not work
+- Global settings like DEBUG, MCP_MYSQL_SSL apply to all environments
 
 ## Available Tools
 
 The MySQL Query MCP server provides three main tools:
 
-### 1. Query Tool
+### 1. query
 
 Execute read-only SQL queries:
 
 ```sql
--- Example query
+-- Example query to run with the query tool
 SELECT * FROM users LIMIT 10;
 ```
 
@@ -163,7 +244,7 @@ SELECT * FROM users LIMIT 10;
 - SHOW commands
 - DESCRIBE/DESC tables
 
-### 2. Info Tool
+### 2. info
 
 Get detailed information about your database:
 
@@ -173,7 +254,7 @@ Get detailed information about your database:
 - Process list
 - Available databases
 
-### 3. Environments Tool
+### 3. environments
 
 List all configured environments from your `.env` file.
 

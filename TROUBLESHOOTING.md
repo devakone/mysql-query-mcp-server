@@ -10,7 +10,19 @@ This guide helps you resolve common issues with the MySQL Query MCP Server.
 - staging
 - production
 
-You cannot use custom environment names. If you need to connect to a database outside of these environments, you must map it to one of these four names.
+You cannot use custom environment names like "dev" or "prod". If you need to connect to a database outside of these environments, you must map it to one of these four names.
+
+**Example of incorrect naming:**
+```
+DEV_DB_HOST=dev.example.com  # Wrong: "DEV" is not recognized
+PROD_DB_HOST=prod.example.com  # Wrong: "PROD" is not recognized
+```
+
+**Example of correct naming:**
+```
+DEVELOPMENT_DB_HOST=dev.example.com  # Correct: "DEVELOPMENT" is recognized
+PRODUCTION_DB_HOST=prod.example.com  # Correct: "PRODUCTION" is recognized
+```
 
 ## Connection Issues
 
@@ -23,7 +35,7 @@ You cannot use custom environment names. If you need to connect to a database ou
 **Possible causes and solutions:**
 
 1. **Database credentials are incorrect**
-   - Double-check your credentials in `.env`
+   - Double-check your credentials in `.env` or your MCP configuration
    - Verify you can connect to the database using another client like MySQL Workbench
 
 2. **Database server is not running**
@@ -35,12 +47,13 @@ You cannot use custom environment names. If you need to connect to a database ou
    - Verify firewall settings allow connections on the MySQL port (usually 3306)
 
 4. **Missing environment variables**
-   - Ensure all required variables for your environment are set in `.env`
+   - Ensure all required variables for your environment are set
    - Run with `DEBUG=true` to see loaded configuration
    
 5. **Incorrect environment name**
    - Verify you're using one of the supported environment names: local, development, staging, production
-   - You cannot use custom environment names with this tool
+   - Environment variables must be prefixed with LOCAL_, DEVELOPMENT_, STAGING_, or PRODUCTION_
+   - You cannot use custom environment names with this tool (such as DEV_ or PROD_)
 
 ### Problem: SSL connection errors
 
@@ -49,7 +62,8 @@ You cannot use custom environment names. If you need to connect to a database ou
 - "Cannot establish secure connection" errors
 
 **Solutions:**
-- Set `[ENV]_DB_SSL=false` if your database doesn't support SSL
+- If your database doesn't support SSL, set `MCP_MYSQL_SSL=false`
+- For databases that require SSL but have self-signed certificates, you may need to set `MCP_MYSQL_REJECT_UNAUTHORIZED=false`
 - For production databases that require SSL, ensure your MySQL client supports it
 
 ## Query Issues
@@ -99,27 +113,35 @@ You cannot use custom environment names. If you need to connect to a database ou
 
 ## Integration Issues
 
-### Problem: Claude doesn't recognize the MySQL tools
+### Problem: AI assistant doesn't recognize the MySQL tools
 
 **Symptoms:**
-- Claude mentions it can't access database functionality
-- Claude doesn't list MySQL tools when asked
+- AI assistant mentions it can't access database functionality
+- AI assistant doesn't list MySQL tools when asked
 
 **Possible causes and solutions:**
 
 1. **MCP Server not correctly configured**
-   - Verify your `.cursor/mcp.json` file has the correct configuration
-   - Make sure the binary name is `mysql-query-mcp`
+   - Verify your MCP configuration file has the correct setup
+   - Make sure to use the full environment names (DEVELOPMENT, not DEV)
 
 2. **Extension not properly configured**
-   - Ensure Cursor IDE has the extension properly configured
-   - Restart Cursor IDE, Windsurf, or Claude Desktop after configuration
+   - Ensure your AI tool has the extension properly configured
+   - Restart the AI tool after configuration changes
 
 ## Debugging Tools
 
 ### Enable Debug Mode
 
-Run the server with debug logging enabled:
+Run the server with debug logging enabled by setting in your configuration:
+
+```json
+"env": {
+  "DEBUG": "true"
+}
+```
+
+Or when running directly:
 
 ```bash
 DEBUG=true mysql-query-mcp
