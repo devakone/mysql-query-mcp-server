@@ -1,5 +1,8 @@
 # MySQL Query MCP Server
 
+[![npm version](https://img.shields.io/npm/v/mysql-query-mcp-server.svg)](https://www.npmjs.com/package/mysql-query-mcp-server)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 A Model Context Protocol (MCP) server that provides **read-only** MySQL database queries for AI assistants like Claude in Cursor IDE, Windsurf, or Claude Desktop. Execute queries, explore database structures, and investigate your data directly from your AI-powered tools.
 
 ## Features & Limitations
