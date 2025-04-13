@@ -56,7 +56,7 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     outputs:
-      release_created: ${{ steps.release.outputs.release_created }}
+      releases_created: ${{ steps.release.outputs.releases_created }}
       tag_name: ${{ steps.release.outputs.tag_name }}
     
     steps:
@@ -74,7 +74,7 @@ jobs:
 
   publish-npm:
     needs: create-release
-    if: needs.create-release.outputs.release_created == 'true'
+    if: needs.create-release.outputs.releases_created == 'true'
     runs-on: ubuntu-latest
     
     steps:
