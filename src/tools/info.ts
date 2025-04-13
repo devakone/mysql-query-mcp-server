@@ -1,32 +1,14 @@
 import { z } from "zod";
-import { createPool, Pool, PoolOptions } from "mysql2/promise";
+import { Pool } from "mysql2/promise";
 import { Environment, InfoParams, DatabaseInfo } from "../types/index.js";
 import { config } from "dotenv";
+import { pools } from "../db/pools.js";
 
 config();
 
 export const infoToolName = "info";
 export const infoToolDescription = "Get information about MySQL databases";
 export const InfoToolSchema = InfoParams;
-
-// Connection pools for each environment
-const pools = new Map<Environment, Pool>();
-
-// Initialize pools
-Object.values(Environment.enum).forEach((env) => {
-  const config: PoolOptions = {
-    host: process.env[`${env.toUpperCase()}_DB_HOST`],
-    user: process.env[`${env.toUpperCase()}_DB_USER`],
-    password: process.env[`${env.toUpperCase()}_DB_PASS`],
-    database: process.env[`${env.toUpperCase()}_DB_NAME`],
-    ssl: process.env[`${env.toUpperCase()}_DB_SSL`] === "true" ? {} : undefined,
-    connectionLimit: 5,
-  };
-
-  if (config.host && config.user && config.password && config.database) {
-    pools.set(env, createPool(config));
-  }
-});
 
 export async function runInfoTool(params: z.infer<typeof InfoToolSchema>): Promise<{ content: { type: string; text: string }[] }> {
   const { environment } = params;

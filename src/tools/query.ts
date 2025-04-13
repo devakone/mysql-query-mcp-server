@@ -11,7 +11,7 @@ export const queryToolDescription = "Execute read-only SQL queries against MySQL
 export const QueryToolSchema = QueryParams;
 
 // Validate query is read-only
-function isReadOnlyQuery(sql: string): boolean {
+export function isReadOnlyQuery(sql: string): boolean {
   const upperSql = sql.trim().toUpperCase();
   return upperSql.startsWith("SELECT") || upperSql.startsWith("SHOW") || 
          upperSql.startsWith("DESCRIBE") || upperSql.startsWith("DESC");
