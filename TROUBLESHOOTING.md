@@ -2,6 +2,42 @@
 
 This guide helps you resolve common issues with the MySQL Query MCP Server.
 
+## MCP Protocol Method Names
+
+**Important:** The MCP protocol uses specific JSON-RPC method names:
+- `tools/list` - Used by clients to request a list of available tools
+- `tools/call` - Used by clients to call a specific tool
+
+The SDK maps these to:
+- `ListToolsRequestSchema` - For handling tools/list requests
+- `CallToolRequestSchema` - For handling tools/call requests
+
+If you're building a client that communicates with this server directly, make sure to use the correct method names in your JSON-RPC requests:
+
+```json
+// List tools
+{
+  "jsonrpc": "2.0",
+  "id": "1",
+  "method": "tools/list",
+  "params": {}
+}
+
+// Call a tool
+{
+  "jsonrpc": "2.0",
+  "id": "2",
+  "method": "tools/call",
+  "params": {
+    "name": "query",
+    "arguments": {
+      "sql": "SELECT 1",
+      "environment": "development"
+    }
+  }
+}
+```
+
 ## Environment Limitations
 
 **Important:** This tool is designed to work with four specific predefined environments:
@@ -110,6 +146,21 @@ PRODUCTION_DB_HOST=prod.example.com  # Correct: "PRODUCTION" is recognized
 3. **Binary not found**
    - Verify the installation path: `which mysql-query-mcp`
    - Reinstall the package if necessary
+
+### Problem: "Method not found" errors
+
+**Symptoms:**
+- Client receives "Method not found" error responses
+- No data is returned from the server
+
+**Possible causes and solutions:**
+
+1. **Incorrect method name format**
+   - Ensure client is using `tools/list` and `tools/call` method names
+   - Do NOT use `listTools`, `callTool`, or other variations
+
+2. **SDK version mismatch**
+   - Ensure you're using a compatible version of the MCP SDK
 
 ## Integration Issues
 
