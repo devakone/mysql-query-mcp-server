@@ -258,6 +258,12 @@ If you're having trouble connecting:
 - Check that you're only using supported query types (SELECT, SHOW, DESCRIBE)
 - Ensure your query is truly read-only
 
+For more comprehensive troubleshooting, see the [Troubleshooting Guide](docs/TROUBLESHOOTING.md).
+
+For examples of how to integrate with AI assistants, see the [Integration Examples](docs/INTEGRATION_EXAMPLE.md).
+
+For implementation details about the MCP protocol, see the [MCP README](docs/MCP_README.md).
+
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
