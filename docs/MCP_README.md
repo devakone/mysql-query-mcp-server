@@ -120,6 +120,10 @@ You can test your MCP server by sending properly formatted JSON-RPC requests:
 
 3. **Transport Issues**: Use the provided `StdioServerTransport` class without modification for best compatibility.
 
+For more detailed troubleshooting, see [Troubleshooting Guide](./TROUBLESHOOTING.md).
+
+For integration examples, check the [Integration Examples](./INTEGRATION_EXAMPLE.md).
+
 ## Resources
 
 - [MCP Server Examples](https://github.com/modelcontextprotocol/servers) - Official reference implementations
