@@ -268,11 +268,39 @@ For implementation details about the MCP protocol, see the [MCP README](docs/MCP
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'feat: add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+## CI/CD and Release Process
+
+This project uses GitHub Actions for continuous integration and automated releases.
+
+### CI/CD Workflow
+
+The CI/CD pipeline consists of:
+
+1. **Build and Test**: Runs on every push to `main` and `develop` branches, and on pull requests to these branches
+   - Tests the codebase with Node.js 16.x and 18.x
+   - Ensures the package builds correctly
+   - Validates all tests pass
+
+2. **Release**: Runs when changes are pushed to the `main` branch and the build/test job succeeds
+   - Uses `release-please` to manage version bumps and changelog updates
+   - Creates a release PR with version changes based on conventional commits
+   - Automatically publishes to npm when a release PR is merged
+
+### Release Process
+
+The project follows [Semantic Versioning](https://semver.org/):
+- **Major version**: Breaking changes (non-backward compatible)
+- **Minor version**: New features (backward compatible)
+- **Patch version**: Bug fixes and minor improvements
+
+Commits should follow the [Conventional Commits](https://www.conventionalcommits.org/) format:
+- `feat: add new feature` - Minor version bump
+- `fix: resolve bug` - Patch version bump
+- `docs: update documentation` - No version bump
+- `chore: update dependencies` - No version bump
+- `BREAKING CHANGE: change API` - Major version bump
+
+When you push to `main`, `release-please` will analyze commits and automatically create or update a release PR with appropriate version bumps and changelog entries.
 
 ## License
 
