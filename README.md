@@ -5,6 +5,10 @@
 
 A Model Context Protocol (MCP) server that provides **read-only** MySQL database queries for AI assistants. Execute queries, explore database structures, and investigate your data directly from your AI-powered tools.
 
+<a href="https://glama.ai/mcp/servers/@devakone/mysql-query-mcp-server">
+  <img width="380" height="200" src="https://glama.ai/mcp/servers/@devakone/mysql-query-mcp-server/badge" alt="MySQL Query Server MCP server" />
+</a>
+
 ## Supported AI Tools
 
 This MCP server works with any tool that supports the Model Context Protocol, including:
@@ -312,4 +316,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-For more information or support, please [open an issue](https://github.com/devakone/mysql-query-mcp-server/issues) on the GitHub repository. 
+For more information or support, please [open an issue](https://github.com/devakone/mysql-query-mcp-server/issues) on the GitHub repository.
