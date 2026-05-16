@@ -5,6 +5,13 @@ All notable changes to the MySQL Query MCP Server will be documented in this fil
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.1](https://github.com/devakone/mysql-query-mcp-server/compare/mysql-query-mcp-server-v1.2.0...mysql-query-mcp-server-v1.2.1) (2026-05-16)
+
+
+### Bug Fixes
+
+* return DATETIME columns as raw strings, default connection TZ to UTC ([#10](https://github.com/devakone/mysql-query-mcp-server/issues/10)) ([dc76648](https://github.com/devakone/mysql-query-mcp-server/commit/dc76648b697656b19ed54ba4ae4228e543fa9dc2))
+
 ## [1.2.0](https://github.com/devakone/mysql-query-mcp-server/compare/mysql-query-mcp-server-v1.1.0...mysql-query-mcp-server-v1.2.0) (2025-04-13)
 
 
