@@ -5,6 +5,13 @@ All notable changes to the MySQL Query MCP Server will be documented in this fil
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-05-16
+
+### Changed
+- Return MySQL DATETIME, DATE, and TIMESTAMP values as raw strings to preserve the exact stored value and avoid host timezone shifts.
+- Default mysql2 connection timezone to UTC (`Z`) with `MYSQL_TIMEZONE` override support for code paths that send JavaScript `Date` values in queries.
+- Callers that previously consumed JavaScript `Date` objects from this MCP server should parse the returned string explicitly.
+
 ## [1.2.0](https://github.com/devakone/mysql-query-mcp-server/compare/mysql-query-mcp-server-v1.1.0...mysql-query-mcp-server-v1.2.0) (2025-04-13)
 
 

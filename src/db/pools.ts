@@ -1,5 +1,6 @@
-import { createPool, Pool, PoolOptions } from "mysql2/promise";
+import { createPool, Pool } from "mysql2/promise";
 import { Environment } from "../types/index.js";
+import { buildPoolOptions } from "./options.js";
 
 function debug(message: string, ...args: any[]) {
   process.stderr.write(`DEBUG [Pools]: ${message} ${args.map(arg => JSON.stringify(arg)).join(' ')}\n`);
@@ -34,16 +35,7 @@ Object.values(Environment.enum).forEach((env) => {
   debug(`PASS: ${process.env[`${envPrefix}_DB_PASS`] ? 'set' : 'not set'}`);
   debug(`SSL: ${process.env.MCP_MYSQL_SSL}`);
   
-  const config: PoolOptions = {
-    host: process.env[`${envPrefix}_DB_HOST`],
-    user: process.env[`${envPrefix}_DB_USER`],
-    password: process.env[`${envPrefix}_DB_PASS`],
-    database: process.env[`${envPrefix}_DB_NAME`],
-    ssl: process.env.MCP_MYSQL_SSL === "true" ? {} : undefined,
-    connectionLimit: 5,
-    enableKeepAlive: true,
-    keepAliveInitialDelay: 10000,
-  };
+  const config = buildPoolOptions(envPrefix);
 
   if (config.host && config.user && config.password && config.database) {
     debug(`Creating pool for ${env} with config:`, {
@@ -51,6 +43,8 @@ Object.values(Environment.enum).forEach((env) => {
       user: config.user,
       database: config.database,
       ssl: config.ssl,
+      dateStrings: config.dateStrings,
+      timezone: config.timezone,
       hasPassword: !!config.password
     });
     
