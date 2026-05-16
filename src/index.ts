@@ -8,7 +8,31 @@ processCommandLineArgs();
 import { config } from "dotenv";
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
-import fs from "fs";
+import { Server } from "@modelcontextprotocol/sdk/server/index.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import {
+  CallToolRequestSchema,
+  ListToolsRequestSchema,
+} from "@modelcontextprotocol/sdk/types.js";
+import { initializePools, closePools } from "./db/pools.js";
+import {
+  queryToolName,
+  queryToolDescription,
+  QueryToolSchema,
+  runQueryTool,
+} from "./tools/query.js";
+import {
+  infoToolName,
+  infoToolDescription,
+  InfoToolSchema,
+  runInfoTool,
+} from "./tools/info.js";
+import {
+  environmentsToolName,
+  environmentsToolDescription,
+  EnvironmentsToolSchema,
+  runEnvironmentsTool,
+} from "./tools/environments.js";
 
 // Get the directory path of the current module
 const __filename = fileURLToPath(import.meta.url);
@@ -39,48 +63,9 @@ debug('Environment variables loaded:', {
   LOCAL_DB_HOST: process.env.LOCAL_DB_HOST,
 });
 
-// Then import pools and MCP server components
-debug('Initializing database pools...');
-import { pools } from "./db/pools.js";
+initializePools();
 
-debug('Importing MCP SDK components...');
-import { Server } from "@modelcontextprotocol/sdk/server/index.js";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import {
-  CallToolRequestSchema,
-  ListToolsRequestSchema,
-} from "@modelcontextprotocol/sdk/types.js";
-
-debug('Importing tools...');
-
-debug('Importing query tool...');
-import {
-  queryToolName,
-  queryToolDescription,
-  QueryToolSchema,
-  runQueryTool,
-} from "./tools/query.js";
-debug('Query tool imported:', { queryToolName });
-
-debug('Importing info tool...');
-import {
-  infoToolName,
-  infoToolDescription,
-  InfoToolSchema,
-  runInfoTool,
-} from "./tools/info.js";
-debug('Info tool imported:', { infoToolName });
-
-debug('Importing environments tool...');
-import {
-  environmentsToolName,
-  environmentsToolDescription,
-  EnvironmentsToolSchema,
-  runEnvironmentsTool,
-} from "./tools/environments.js";
-debug('Environments tool imported:', { environmentsToolName });
-
-debug('All tools imported successfully');
+debug('Tools imported successfully');
 
 /**
  * MCP server providing MySQL database tools:
@@ -256,19 +241,8 @@ debug('CallTool handler registered');
 // Handle process termination
 async function cleanup() {
   debug('Starting cleanup...');
-  
-  for (const [env, pool] of pools.entries()) {
-    try {
-      debug(`Closing pool for ${env}...`);
-      await pool.end();
-      debug(`Pool for ${env} closed successfully`);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Unknown error";
-      debug(`Error closing pool for ${env}:`, { error, message });
-    }
-  }
-  
-  debug('Cleanup completed');
+  await closePools();
+  debug('Server cleanup completed');
 }
 
 // Clean server startup function matching the PostgreSQL example

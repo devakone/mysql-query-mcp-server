@@ -21,6 +21,7 @@ Environment Variables:
   LOCAL_DB_USER           Local database username
   LOCAL_DB_PASS           Local database password
   LOCAL_DB_NAME           Local database name
+  LOCAL_DB_PORT           Local database port (default: 3306)
   LOCAL_DB_SSL            Set to 'true' to enable SSL for local database
   
   DEVELOPMENT_DB_*        Development environment database settings
