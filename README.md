@@ -99,7 +99,8 @@ Create or edit your MCP configuration file (e.g., `.cursor/mcp.json` for Cursor 
       
       "DEBUG": "false",
       "MCP_MYSQL_SSL": "true",
-      "MCP_MYSQL_REJECT_UNAUTHORIZED": "false"
+      "MCP_MYSQL_REJECT_UNAUTHORIZED": "false",
+      "MYSQL_TIMEZONE": "Z"
     }
   }
 }
@@ -129,6 +130,7 @@ Choose the approach that best fits your workflow. Both methods will work correct
 - At least one environment (typically "local") must be configured
 - You only need to configure the environments you plan to use
 - For security reasons, consider using environment variables or secure credential storage for production credentials
+- DATETIME, DATE, and TIMESTAMP columns are returned as strings to preserve the exact value stored in MySQL without host timezone shifting
 
 ## Configuration Options
 
@@ -143,6 +145,15 @@ Choose the approach that best fits your workflow. Both methods will work correct
 | [ENV]_DB_SSL | Enable SSL connection | false |
 | MCP_MYSQL_SSL | Enable SSL for all connections | false |
 | MCP_MYSQL_REJECT_UNAUTHORIZED | Verify SSL certificates | true |
+| MYSQL_TIMEZONE | Timezone mysql2 uses when sending JavaScript Date values in queries | Z |
+
+### Date and Time Values
+
+MySQL DATETIME, DATE, and TIMESTAMP columns are returned as raw strings, for example `2026-05-13 16:12:08`. This preserves the exact stored value and prevents the Node host timezone from shifting results during JSON serialization.
+
+`MYSQL_TIMEZONE` defaults to `Z` (UTC). Override it only if your application intentionally sends JavaScript `Date` objects to MySQL using a different connection timezone.
+
+Callers that already handle date/time values as strings do not need to change. Callers that previously expected JavaScript `Date` objects from this MCP server should parse the returned string explicitly.
 
 ## Integration with AI Assistants
 
