@@ -80,13 +80,17 @@ PRODUCTION_DB_HOST=prod.example.com  # Correct: "PRODUCTION" is recognized
 
 3. **Network/firewall restrictions**
    - Check if your database allows remote connections
-   - Verify firewall settings allow connections on the MySQL port (usually 3306)
+   - Verify firewall settings allow connections on the configured MySQL port (`[ENV]_DB_PORT`, default `3306`)
 
 4. **Missing environment variables**
    - Ensure all required variables for your environment are set
    - Run with `DEBUG=true` to see loaded configuration
+
+5. **Incorrect custom port**
+   - If your MySQL server is not on `3306`, set `[ENV]_DB_PORT` explicitly
+   - Ensure the value is a valid integer such as `3307`
    
-5. **Incorrect environment name**
+6. **Incorrect environment name**
    - Verify you're using one of the supported environment names: local, development, staging, production
    - Environment variables must be prefixed with LOCAL_, DEVELOPMENT_, STAGING_, or PRODUCTION_
    - You cannot use custom environment names with this tool (such as DEV_ or PROD_)

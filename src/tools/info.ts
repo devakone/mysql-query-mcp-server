@@ -1,10 +1,6 @@
 import { z } from "zod";
-import { Pool } from "mysql2/promise";
-import { Environment, InfoParams, DatabaseInfo } from "../types/index.js";
-import { config } from "dotenv";
+import { InfoParams, DatabaseInfo } from "../types/index.js";
 import { pools } from "../db/pools.js";
-
-config();
 
 export const infoToolName = "info";
 export const infoToolDescription = "Get information about MySQL databases";
