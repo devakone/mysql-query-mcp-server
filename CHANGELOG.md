@@ -5,6 +5,13 @@ All notable changes to the MySQL Query MCP Server will be documented in this fil
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.2](https://github.com/devakone/mysql-query-mcp-server/compare/mysql-query-mcp-server-v1.2.1...mysql-query-mcp-server-v1.2.2) (2026-05-16)
+
+
+### Bug Fixes
+
+* respect custom mysql db port ([#11](https://github.com/devakone/mysql-query-mcp-server/issues/11)) ([a7fdde1](https://github.com/devakone/mysql-query-mcp-server/commit/a7fdde1f21f08938c369b5446959f55e7a5d5a9f))
+
 ## [1.2.1](https://github.com/devakone/mysql-query-mcp-server/compare/mysql-query-mcp-server-v1.2.0...mysql-query-mcp-server-v1.2.1) (2026-05-16)
 
 
