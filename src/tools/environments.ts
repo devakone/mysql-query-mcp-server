@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { Environment } from "../types/index.js";
+import { credentialErrors, credentialSources, pools } from "../db/pools.js";
 import { debug } from "../logging.js";
 
 export const environmentsToolName = "environments";
@@ -15,18 +16,14 @@ const ENV_PREFIX_MAP = {
 } as const;
 
 /**
- * Describes where an environment's password came from. Naming the mechanism is
- * capability information, not a secret, and it tells the user which
- * environments are configured which way.
- */
-function credentialSourceFor(envPrefix: string): string {
-  return process.env[`${envPrefix}_DB_PASS`] ? 'env' : 'none';
-}
-
-/**
  * Reports which environments are usable. This response describes capability
- * only: environment names and how each one was configured. It must never carry
- * configuration values. See src/security/guard.ts.
+ * only: environment names, how each password was obtained, and whether the
+ * environment is ready to query. It must never carry configuration values.
+ *
+ * Resolution failure reasons are deliberately omitted. A resolver's error text
+ * can quote whatever the underlying secret manager printed, and this response
+ * goes into a chat transcript. Reasons are in the server log and in
+ * `mysql-query-mcp doctor`. See src/security/guard.ts.
  */
 export async function runEnvironmentsTool(
   _params?: z.infer<typeof EnvironmentsToolSchema>,
@@ -46,7 +43,8 @@ export async function runEnvironmentsTool(
     })
     .map((env) => ({
       name: env,
-      credentialSource: credentialSourceFor(ENV_PREFIX_MAP[env]),
+      credentialSource: credentialSources.get(env) ?? 'none',
+      status: statusFor(env),
     }));
 
   debug('environments', 'available environments', environments.map((env) => env.name));
@@ -60,4 +58,9 @@ export async function runEnvironmentsTool(
       }, null, 2),
     }],
   };
+}
+
+function statusFor(environment: Environment): string {
+  if (pools.has(environment)) return 'ready';
+  return credentialErrors.has(environment) ? 'credential-error' : 'unavailable';
 }

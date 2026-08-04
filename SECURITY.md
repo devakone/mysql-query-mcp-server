@@ -6,6 +6,25 @@ Please report security issues privately through
 [GitHub Security Advisories](https://github.com/devakone/mysql-query-mcp-server/security/advisories/new)
 rather than opening a public issue. I aim to acknowledge reports within a few days.
 
+## Credential storage
+
+Since 1.4.0 a password does not have to live in your MCP client config file. Set
+`[ENV]_DB_PASS_SOURCE` to a reference instead and it is fetched at startup from
+your OS keychain, a secret manager command, AWS Secrets Manager, or SSM
+Parameter Store. See
+[Credential Sources](README.md#credential-sources) for setup, and run
+`mysql-query-mcp doctor` to check it.
+
+Plaintext `[ENV]_DB_PASS` still works and is the documented path for a throwaway
+local database. Using it for `production` logs a warning on startup.
+
+This is defense in depth rather than a fix for a vulnerability. A local stdio
+server's config file is inside your own trust boundary, and the MCP
+specification directs stdio servers to read credentials from the environment.
+What changes is that the file itself no longer has to contain the secret, so it
+cannot leak through version control, a backup, a screen share, or a support
+bundle.
+
 ## Advisory: database credentials returned in tool responses
 
 **Affected versions:** all releases up to and including 1.2.2

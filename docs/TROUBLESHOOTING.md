@@ -62,6 +62,11 @@ PRODUCTION_DB_HOST=prod.example.com  # Correct: "PRODUCTION" is recognized
 
 ## Connection Issues
 
+> Before working through this section, run `mysql-query-mcp doctor`. It reports
+> every environment, whether its configuration is complete, where its password
+> comes from, and whether that password resolves, without starting the server or
+> connecting to a database. It never prints a credential.
+
 ### Problem: Cannot connect to database
 
 **Symptoms:**
@@ -74,26 +79,61 @@ PRODUCTION_DB_HOST=prod.example.com  # Correct: "PRODUCTION" is recognized
    - Double-check your credentials in `.env` or your MCP configuration
    - Verify you can connect to the database using another client like MySQL Workbench
 
-2. **Database server is not running**
+2. **A credential source failed to resolve**
+   - `mysql-query-mcp doctor` shows `FAILED` in the PASSWORD column and the reason in DETAIL
+   - The `environments` tool reports `"status": "credential-error"` for that environment. The reason is not in the tool response on purpose, since it can quote output from your secret manager. Use `doctor` or the server log
+   - An environment whose source fails is disabled on its own. The others keep working
+   - Common causes: not signed in to your secret manager (`op signin`, `vault login`, `aws sso login`), a keychain item that does not exist, or a typo in the reference
+
+3. **Database server is not running**
    - Check if your MySQL server is running
    - For local databases: `sudo service mysql status` (Linux) or check Activity Monitor (Mac)
 
-3. **Network/firewall restrictions**
+4. **Network/firewall restrictions**
    - Check if your database allows remote connections
    - Verify firewall settings allow connections on the configured MySQL port (`[ENV]_DB_PORT`, default `3306`)
 
-4. **Missing environment variables**
+5. **Missing environment variables**
    - Ensure all required variables for your environment are set
    - Run with `DEBUG=true` to see loaded configuration
 
-5. **Incorrect custom port**
+6. **Incorrect custom port**
    - If your MySQL server is not on `3306`, set `[ENV]_DB_PORT` explicitly
    - Ensure the value is a valid integer such as `3307`
    
-6. **Incorrect environment name**
+7. **Incorrect environment name**
    - Verify you're using one of the supported environment names: local, development, staging, production
    - Environment variables must be prefixed with LOCAL_, DEVELOPMENT_, STAGING_, or PRODUCTION_
    - You cannot use custom environment names with this tool (such as DEV_ or PROD_)
+
+### Problem: A credential source is not resolving
+
+**Symptoms:**
+- `doctor` reports `FAILED` for one environment
+- Server log shows `WARN [credentials] <env> is unavailable`
+
+**Possible causes and solutions:**
+
+1. **The keychain item does not exist**
+   - Create it: `mysql-query-mcp credentials set production`
+   - macOS: confirm with `security find-generic-password -s mysql-query-mcp -a production`
+   - Linux: `secret-tool` must be installed (`libsecret-tools` on Debian and Ubuntu)
+
+2. **`keychain:` on Windows**
+   - Not supported, because reading Windows Credential Manager requires a native module
+   - Use `cmd:` instead, for example `cmd:powershell -Command "Get-Secret -Name prod-mysql -AsPlainText"`
+
+3. **The command works in your shell but not here**
+   - The command runs through `/bin/sh -c` with the environment your MCP client gave the server, which is usually not your interactive shell environment. `PATH` in particular may differ
+   - Use an absolute path, for example `cmd:/opt/homebrew/bin/op read op://Infra/db/password`
+
+4. **An AWS source reports a missing package**
+   - `aws-secrets:` and `aws-ssm:` need an SDK that is not bundled
+   - Either install it alongside the server, or use the AWS CLI through `cmd:`, which the error message spells out for you
+
+5. **The source resolved to an empty value**
+   - Treated as a failure on purpose, since an empty password would fail at connection time with a much less obvious error
+   - Check the reference points at the right field, for example `#password` on a JSON secret
 
 ### Problem: SSL connection errors
 

@@ -17,6 +17,7 @@ import {
 import { initializePools, closePools } from "./db/pools.js";
 import { debug, warn } from "./logging.js";
 import { guardToolResponse } from "./security/guard.js";
+import { runSubcommand } from "./cli.js";
 import {
   queryToolName,
   queryToolDescription,
@@ -47,7 +48,6 @@ config({ path: envPath });
 
 debug('startup', 'environment loaded', { projectRoot, envPath });
 
-initializePools();
 
 /**
  * MCP server providing MySQL database tools:
@@ -210,6 +210,16 @@ async function cleanup() {
 
 // Clean server startup function matching the PostgreSQL example
 async function runServer() {
+  // Subcommands run instead of the server. They write to stdout, which is only
+  // safe because no MCP transport is attached yet.
+  if (await runSubcommand(process.argv.slice(2))) {
+    return;
+  }
+
+  // Credential sources may shell out to a keychain or call AWS, so pool setup is
+  // asynchronous and must finish before the transport starts accepting requests.
+  await initializePools();
+
   const transport = new StdioServerTransport();
 
   await server.connect(transport);
