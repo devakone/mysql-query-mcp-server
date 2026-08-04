@@ -21,14 +21,11 @@ const mockResponses = [
   // Variables query
   [[
     { Variable_name: 'max_connections', Value: '151' } as RowDataPacket,
-    { Variable_name: 'version', Value: '8.0.32' } as RowDataPacket
+    { Variable_name: 'version', Value: '8.0.32' } as RowDataPacket,
+    { Variable_name: 'secure_file_priv', Value: '/var/lib/mysql-files/' } as RowDataPacket,
+    { Variable_name: 'datadir', Value: '/var/lib/mysql/' } as RowDataPacket
   ], [] as FieldPacket[]],
-  
-  // Process list query
-  [[
-    { Id: 1, User: 'root', Host: 'localhost', Command: 'Query', Time: 0 } as RowDataPacket
-  ], [] as FieldPacket[]],
-  
+
   // Databases query
   [[
     { Database: 'mysql' } as RowDataPacket,
@@ -108,15 +105,32 @@ describe('info tool', () => {
     expect(parsedContent).toHaveProperty('version', '8.0.32');
     expect(parsedContent).toHaveProperty('status', 'Up 12345 seconds');
     expect(parsedContent.variables).toHaveProperty('max_connections', '151');
-    expect(parsedContent.processlist).toHaveLength(1);
+    expect(parsedContent.counters).toHaveProperty('Threads_connected', '10');
     expect(parsedContent.databases).toContain('mysql');
     expect(parsedContent.databases).toContain('test');
-    
+
     // Verify connection was released
     expect(releaseCalled).toBe(true);
-    
+
     // Verify all queries were called
-    expect(queryCount).toBe(5);
+    expect(queryCount).toBe(4);
+  });
+
+  it('should not report the process list', async () => {
+    const result = await runInfoTool({ environment: 'local' });
+    const parsedContent = JSON.parse(result.content[0].text);
+
+    // SHOW PROCESSLIST exposes other sessions' in-flight query text.
+    expect(parsedContent).not.toHaveProperty('processlist');
+  });
+
+  it('should only report allowlisted server variables', async () => {
+    const result = await runInfoTool({ environment: 'local' });
+    const parsedContent = JSON.parse(result.content[0].text);
+
+    expect(parsedContent.variables).toHaveProperty('version');
+    expect(parsedContent.variables).not.toHaveProperty('secure_file_priv');
+    expect(parsedContent.variables).not.toHaveProperty('datadir');
   });
   
   it('should throw error when environment not found', async () => {
