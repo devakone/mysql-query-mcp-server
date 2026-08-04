@@ -5,6 +5,18 @@ All notable changes to the MySQL Query MCP Server will be documented in this fil
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0](https://github.com/devakone/mysql-query-mcp-server/compare/mysql-query-mcp-server-v1.2.2...mysql-query-mcp-server-v1.3.0) (2026-08-04)
+
+
+### Bug Fixes
+
+* **security:** stop returning database credentials in tool responses ([#14](https://github.com/devakone/mysql-query-mcp-server/issues/14)) ([9e89386](https://github.com/devakone/mysql-query-mcp-server/commit/9e89386059ab63df92062454bd5fb4cfbd968aa2))
+
+
+### Miscellaneous
+
+* release as 1.3.0 ([#16](https://github.com/devakone/mysql-query-mcp-server/issues/16)) ([5a90fe9](https://github.com/devakone/mysql-query-mcp-server/commit/5a90fe9fce7c5fbcd0151da9e279208020fb4d15))
+
 ## [1.2.2](https://github.com/devakone/mysql-query-mcp-server/compare/mysql-query-mcp-server-v1.2.1...mysql-query-mcp-server-v1.2.2) (2026-05-16)
 
 
