@@ -15,6 +15,8 @@ import {
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 import { initializePools, closePools } from "./db/pools.js";
+import { debug, warn } from "./logging.js";
+import { guardToolResponse } from "./security/guard.js";
 import {
   queryToolName,
   queryToolDescription,
@@ -39,33 +41,13 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const projectRoot = resolve(__dirname, '..');
 
-function debug(message: string, ...args: any[]) {
-  if (process.env.DEBUG === 'true') {
-    const timestamp = new Date().toISOString();
-    const logMessage = `[${timestamp}] DEBUG: ${message} ${args.map(arg => JSON.stringify(arg)).join(' ')}\n`;
-    process.stderr.write(logMessage);
-  }
-}
-
 // Load environment variables before any other imports
 const envPath = resolve(projectRoot, '.env');
 config({ path: envPath });
 
-// Debug environment variables
-debug('Environment variables loaded:', {
-  __dirname,
-  projectRoot,
-  envPath,
-  PRODUCTION_DB_HOST: process.env.PRODUCTION_DB_HOST,
-  PRODUCTION_DB_USER: process.env.PRODUCTION_DB_USER,
-  PRODUCTION_DB_NAME: process.env.PRODUCTION_DB_NAME,
-  DEVELOPMENT_DB_HOST: process.env.DEVELOPMENT_DB_HOST,
-  LOCAL_DB_HOST: process.env.LOCAL_DB_HOST,
-});
+debug('startup', 'environment loaded', { projectRoot, envPath });
 
 initializePools();
-
-debug('Tools imported successfully');
 
 /**
  * MCP server providing MySQL database tools:
@@ -75,7 +57,6 @@ debug('Tools imported successfully');
  */
 
 // Create an MCP server instance
-debug('Creating MCP server instance...');
 const server = new Server(
   {
     name: "mysql-mcp-server",
@@ -132,13 +113,10 @@ const server = new Server(
     },
   },
 );
-debug('Server instance created');
 
 // Register ListTools handler
-debug('Registering ListTools handler...');
 server.setRequestHandler(ListToolsRequestSchema, async () => {
-  debug('Handling ListTools request');
-  debug('Tool names available:', { queryToolName, infoToolName, environmentsToolName });
+  debug('server', 'handling ListTools request');
   
   const toolsList = {
     tools: [
@@ -191,99 +169,79 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       },
     ],
   };
-  debug('Returning tools list:', toolsList);
   return toolsList;
 });
-debug('ListTools handler registered');
 
 // Register call tool handler
-debug('Registering CallTool handler...');
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params;
-  debug('Handling CallTool request:', { name, args });
+  debug('server', 'handling CallTool request', { name });
 
   try {
     switch (name) {
       case queryToolName: {
-        debug('Validating query tool arguments...');
         const validated = QueryToolSchema.parse(args);
-        debug('Validated query tool args:', validated);
-        debug('Executing query tool...');
-        return await runQueryTool(validated);
+        return guardToolResponse(name, await runQueryTool(validated));
       }
       case infoToolName: {
-        debug('Validating info tool arguments...');
         const validated = InfoToolSchema.parse(args);
-        debug('Validated info tool args:', validated);
-        debug('Executing info tool...');
-        return await runInfoTool(validated);
+        return guardToolResponse(name, await runInfoTool(validated));
       }
       case environmentsToolName: {
-        debug('Validating environments tool arguments...');
         const validated = EnvironmentsToolSchema.parse(args);
-        debug('Validated environments tool args:', validated);
-        debug('Executing environments tool...');
-        return await runEnvironmentsTool(validated);
+        return guardToolResponse(name, await runEnvironmentsTool(validated));
       }
       default: {
-        const errorMsg = `Unknown tool: ${name}`;
-        debug('Error:', errorMsg);
-        throw new Error(errorMsg);
+        throw new Error(`Unknown tool: ${name}`);
       }
     }
   } catch (error) {
-    debug('Error executing tool:', error);
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    debug('server', 'tool execution failed', { name, message });
     throw error;
   }
 });
-debug('CallTool handler registered');
 
 // Handle process termination
 async function cleanup() {
-  debug('Starting cleanup...');
   await closePools();
-  debug('Server cleanup completed');
+  debug('server', 'cleanup completed');
 }
 
 // Clean server startup function matching the PostgreSQL example
 async function runServer() {
-  debug('Starting server...');
   const transport = new StdioServerTransport();
-  
-  debug('Connecting server to transport...');
+
   await server.connect(transport);
-  debug('Server connected and running on stdio');
-  
-  debug('Server initialization complete and ready for requests');
+  debug('server', 'connected and running on stdio');
+
   process.stderr.write('[MCP-MYSQL-SERVER] Ready to handle requests\n');
 }
 
 // Simple error handler for main function
 runServer().catch(error => {
-  debug('Failed to start MCP server:', error);
-  console.error('Failed to start MCP server:', error);
+  const message = error instanceof Error ? error.message : String(error);
+  warn('server', 'failed to start MCP server', { message });
   process.exit(1);
 });
 
 // Handle process signals for clean shutdown
 process.on('SIGINT', async () => {
-  debug('Received SIGINT signal, shutting down...');
   await cleanup();
   process.exit(0);
 });
 
 process.on('SIGTERM', async () => {
-  debug('Received SIGTERM signal, shutting down...');
   await cleanup();
   process.exit(0);
 });
 
 // Handle uncaught errors
 process.on('uncaughtException', (error) => {
-  debug('Uncaught exception:', error);
+  debug('server', 'uncaught exception', { message: error.message });
 });
 
-process.on('unhandledRejection', (reason, promise) => {
+process.on('unhandledRejection', (reason) => {
   const message = reason instanceof Error ? reason.message : String(reason);
-  debug('Unhandled rejection:', { message, reason });
+  debug('server', 'unhandled rejection', { message });
 });

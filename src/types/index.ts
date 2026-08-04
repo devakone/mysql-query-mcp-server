@@ -46,8 +46,10 @@ export interface QueryResult {
 export interface DatabaseInfo {
   version: string;
   status: string;
+  /** Allowlisted server variables. See REPORTED_VARIABLES in tools/info.ts. */
   variables: Record<string, string>;
-  processlist: unknown[];
+  /** Allowlisted status counters. Replaces the former processlist field. */
+  counters: Record<string, string>;
   databases: string[];
 }
 

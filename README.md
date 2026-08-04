@@ -230,10 +230,13 @@ SELECT * FROM users LIMIT 10;
 Get detailed information about your database:
 
 - Server version
-- Connection status
-- Database variables
-- Process list
+- Connection status and uptime
+- Selected server variables (character set, timezone, timeouts, connection limits)
+- Connection counters (threads connected, threads running, query counts)
 - Available databases
+
+The full `SHOW VARIABLES` output and the server process list are deliberately not
+reported. See [SECURITY.md](SECURITY.md).
 
 ### 3. environments
 
@@ -249,7 +252,17 @@ Use the environments tool to show me which database environments are available.
 - ✅ Each environment has its own isolated connection pool
 - ✅ SSL connections are supported for production environments
 - ✅ Query timeouts prevent runaway operations
-- ⚠️ Consider using secure credential management for database credentials
+- ✅ Tool responses never include configuration values, and are checked for secrets before
+  being returned
+- ⚠️ Credentials are still configured as plaintext environment variables in your MCP client
+  config. Keep that file out of version control
+
+### If you used a version before 1.3.0
+
+Versions up to and including 1.2.2 returned database credentials in the `environments`
+tool response, which means they could have been written into an AI chat transcript.
+**Rotate any credential you configured through this server.** Details are in
+[SECURITY.md](SECURITY.md).
 
 ## Troubleshooting
 
