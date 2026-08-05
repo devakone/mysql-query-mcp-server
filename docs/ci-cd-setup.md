@@ -2,28 +2,44 @@
 
 This guide explains how to set up the necessary GitHub environment for CI/CD automation.
 
-## Required Secrets
+## Publishing Authentication
 
-For the CI/CD pipeline to publish to npm, you need to set up a GitHub secret:
+Publishing uses [npm trusted publishing](https://docs.npmjs.com/trusted-publishers/)
+over OIDC. There is no npm token, and no publishing secret to store or rotate.
+Each publish authenticates with a short-lived token minted by GitHub for that one
+workflow run, which cannot be extracted or reused.
 
-### NPM_TOKEN
+`NPM_TOKEN` is no longer used and the repository secret can be deleted.
 
-1. **Generate an npm token**:
-   - Log in to your npm account at https://www.npmjs.com/
-   - Navigate to your profile settings
-   - Select "Access Tokens"
-   - Click "Generate New Token"
-   - Choose "Automation" token type
-   - Provide a description (e.g., "GitHub CI/CD Publishing")
-   - Copy the generated token (it will only be shown once)
+### What makes it work
 
-2. **Add the token to GitHub**:
-   - In your GitHub repository, go to "Settings"
-   - Navigate to "Secrets and variables" > "Actions"
-   - Click "New repository secret"
-   - Set Name as `NPM_TOKEN`
-   - Paste your npm token as the Value
-   - Click "Add secret"
+Three things have to agree. If any one of them is wrong, `npm publish` fails with
+a confusing `E404 Not Found - PUT`, because npm returns 404 rather than 401 for a
+package you are not authorized to publish.
+
+1. **The trusted publisher on npm.** On the package's Settings page at npmjs.com,
+   the Trusted Publisher entry must name this repository (`devakone/mysql-query-mcp-server`)
+   and the workflow file that publishes, which is `ci.yml`.
+
+2. **The `id-token: write` permission.** Granted on the `publish-npm` job in
+   `.github/workflows/ci.yml`. Without it GitHub will not mint an OIDC token.
+
+3. **npm 11.5.1 or later.** Node 22.13.0 ships npm 10, which has no OIDC support,
+   so the workflow installs a newer npm before publishing.
+
+### Gotchas
+
+- **Renaming the workflow file breaks publishing.** The trust relationship is
+  bound to the file name. If `ci.yml` is renamed or the publish job moves to
+  another file, update the Trusted Publisher entry on npm to match.
+- **Do not write an `.npmrc` auth token in the publish job.** A token takes
+  precedence over OIDC, which reintroduces exactly the long-lived credential this
+  setup removes.
+- **A separate `publish-npm.yml` triggered by `on: release` will not work here.**
+  release-please creates the GitHub release using `secrets.GITHUB_TOKEN`, and
+  events raised by `GITHUB_TOKEN` deliberately do not trigger further workflow
+  runs. That is why publishing stays in `ci.yml`, gated on release-please's
+  `releases_created` output.
 
 ## How Release Process Works
 

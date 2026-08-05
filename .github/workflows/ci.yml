@@ -76,29 +76,42 @@ jobs:
     needs: create-release
     if: needs.create-release.outputs.releases_created == 'true'
     runs-on: ubuntu-latest
-    
+
+    # Publishes with npm trusted publishing (OIDC) rather than a long-lived
+    # token. id-token: write lets this job mint the short-lived OIDC token that
+    # npm exchanges for publish rights. The trust relationship is configured on
+    # the package at npmjs.com and is bound to this repository and this workflow
+    # file name, so renaming this file breaks publishing until npm is updated.
+    permissions:
+      contents: read
+      id-token: write
+
     steps:
       - uses: actions/checkout@v4
         with:
           ref: main
           fetch-depth: 0
-      
+
       - name: Use Node.js 22.13.0
         uses: actions/setup-node@v4
         with:
           node-version: 22.13.0
           registry-url: https://registry.npmjs.org/
           cache: 'npm'
-      
+
+      # Node 22.13.0 ships npm 10, which has no OIDC support. Trusted publishing
+      # needs npm 11.5.1 or later.
+      - name: Use an npm that supports trusted publishing
+        run: npm install -g npm@latest
+
       - name: Install dependencies
         run: npm ci
-      
+
       - name: Build package
         run: npm run build
-        
+
+      # No .npmrc and no NPM_TOKEN. The npm CLI detects the OIDC environment and
+      # authenticates with it, and generates provenance automatically. Writing a
+      # token here would take precedence and defeat the point.
       - name: Publish to NPM
-        run: |
-          echo "//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}" > .npmrc
-          npm publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }} 
+        run: npm publish 
