@@ -66,7 +66,13 @@ Create or edit your MCP configuration file (e.g., `.cursor/mcp.json` for Cursor 
 }
 ```
 
-**Comprehensive Configuration with Database Credentials:**
+**Comprehensive Configuration:**
+
+Store each password where it belongs and point at it, so this file holds no
+secrets and is safe to commit and share. Run `mysql-query-mcp credentials set
+production` first to put the password in your OS keychain. See
+[Credential Sources](#credential-sources).
+
 ```json
 {
   "mysql": {
@@ -78,25 +84,25 @@ Create or edit your MCP configuration file (e.g., `.cursor/mcp.json` for Cursor 
       "LOCAL_DB_PASS": "<YOUR_LOCAL_DB_PASSWORD>",
       "LOCAL_DB_NAME": "your_database",
       "LOCAL_DB_PORT": "3306",
-      
+
       "DEVELOPMENT_DB_HOST": "dev.example.com",
       "DEVELOPMENT_DB_USER": "<DEV_USER>",
-      "DEVELOPMENT_DB_PASS": "<DEV_PASSWORD>",
+      "DEVELOPMENT_DB_PASS_SOURCE": "keychain://mysql-query-mcp/development",
       "DEVELOPMENT_DB_NAME": "your_database",
       "DEVELOPMENT_DB_PORT": "3306",
-      
+
       "STAGING_DB_HOST": "staging.example.com",
       "STAGING_DB_USER": "<STAGING_USER>",
-      "STAGING_DB_PASS": "<STAGING_PASSWORD>",
+      "STAGING_DB_PASS_SOURCE": "keychain://mysql-query-mcp/staging",
       "STAGING_DB_NAME": "your_database",
       "STAGING_DB_PORT": "3306",
-      
+
       "PRODUCTION_DB_HOST": "prod.example.com",
       "PRODUCTION_DB_USER": "<PRODUCTION_USER>",
-      "PRODUCTION_DB_PASS": "<PRODUCTION_PASSWORD>",
+      "PRODUCTION_DB_PASS_SOURCE": "keychain://mysql-query-mcp/production",
       "PRODUCTION_DB_NAME": "your_database",
       "PRODUCTION_DB_PORT": "3306",
-      
+
       "DEBUG": "false",
       "MCP_MYSQL_SSL": "true",
       "MCP_MYSQL_REJECT_UNAUTHORIZED": "false",
@@ -105,6 +111,10 @@ Create or edit your MCP configuration file (e.g., `.cursor/mcp.json` for Cursor 
   }
 }
 ```
+
+Only `LOCAL_DB_PASS` is left as a plaintext password above, because a throwaway
+local database password is not worth the ceremony. Everything else reads from the
+keychain.
 
 ### Choosing the Right Configuration Approach
 
@@ -129,8 +139,114 @@ Choose the approach that best fits your workflow. Both methods will work correct
 - Global settings like DEBUG, MCP_MYSQL_SSL apply to all environments
 - At least one environment (typically "local") must be configured
 - You only need to configure the environments you plan to use
-- For security reasons, consider using environment variables or secure credential storage for production credentials
+- Use `[ENV]_DB_PASS_SOURCE` rather than `[ENV]_DB_PASS` for anything you care about, so no password is stored in this file. See [Credential Sources](#credential-sources)
+- Run `mysql-query-mcp doctor` to check your configuration without starting the server
 - DATETIME, DATE, and TIMESTAMP columns are returned as strings to preserve the exact value stored in MySQL without host timezone shifting
+
+## Credential Sources
+
+By default a password sits in plaintext in your MCP client config file, which
+means that file cannot be committed, shared, or used as an example. Set
+`[ENV]_DB_PASS_SOURCE` instead and the config holds only a reference. The
+password is fetched once at startup and kept in memory.
+
+### Quickest path: your OS keychain
+
+```bash
+mysql-query-mcp credentials set production
+```
+
+That prompts for the password (input is hidden), stores it in the macOS Keychain
+or libsecret, and prints the line to add:
+
+```json
+"PRODUCTION_DB_PASS_SOURCE": "keychain://mysql-query-mcp/production"
+```
+
+Then remove `PRODUCTION_DB_PASS` from your config and check it worked:
+
+```bash
+mysql-query-mcp doctor
+```
+
+### All supported sources
+
+| Source | Example | Notes |
+|--------|---------|-------|
+| `keychain:` | `keychain://mysql-query-mcp/production` | macOS Keychain, or libsecret on Linux. Not available on Windows, use `cmd:` there |
+| `cmd:` | `cmd:op read op://Infra/prod-mysql/password` | Runs a command, uses its stdout. Covers every secret manager with no extra dependency |
+| `aws-secrets:` | `aws-secrets://prod/mysql#password` | AWS Secrets Manager. `#password` reads that key out of a JSON secret. Requires `@aws-sdk/client-secrets-manager` |
+| `aws-ssm:` | `aws-ssm:///prod/mysql/password` | SSM Parameter Store, decrypted. Requires `@aws-sdk/client-ssm` |
+| `env:` | `env:SOME_OTHER_VAR` | Reads another environment variable. Mostly for CI |
+
+`cmd:` is the most flexible and needs nothing installed beyond the tool you
+already use:
+
+```jsonc
+// 1Password
+"PRODUCTION_DB_PASS_SOURCE": "cmd:op read op://Infra/prod-mysql/password"
+
+// HashiCorp Vault
+"PRODUCTION_DB_PASS_SOURCE": "cmd:vault kv get -field=password kv/mysql/prod"
+
+// AWS, using the CLI you already have, with no extra npm package
+"PRODUCTION_DB_PASS_SOURCE": "cmd:aws secretsmanager get-secret-value --secret-id prod/mysql --query SecretString --output text"
+
+// pass, on Linux
+"PRODUCTION_DB_PASS_SOURCE": "cmd:pass show mysql/production"
+```
+
+The AWS SDK packages are not bundled, because they add roughly 11 MB for a
+minority of users and the `cmd:` line above does the same job. Install one only
+if you prefer the native source:
+
+```bash
+npm install -g mysql-query-mcp-server @aws-sdk/client-secrets-manager
+```
+
+### Behavior notes
+
+- `[ENV]_DB_PASS_SOURCE` takes precedence over `[ENV]_DB_PASS`. If both are set
+  the server warns and uses the source.
+- A source that fails to resolve disables only its own environment. A broken
+  production reference does not stop you querying local.
+- Configuring `production` with a plaintext `PRODUCTION_DB_PASS` logs a warning
+  on startup. It still works. Other environments are not nagged.
+- Resolved passwords are registered with the same guard that protects
+  environment variables, so they cannot appear in a tool response or a log line.
+- Resolution happens once at startup. If a password changes, restart the server.
+
+### Migrating from inline passwords
+
+Already using `[ENV]_DB_PASS`? Nothing breaks, and you can migrate one
+environment at a time. Only the password line changes:
+
+```diff
+  "PRODUCTION_DB_HOST": "prod.example.com",
+  "PRODUCTION_DB_USER": "mcp_user",
+- "PRODUCTION_DB_PASS": "actual-production-password",
++ "PRODUCTION_DB_PASS_SOURCE": "keychain://mysql-query-mcp/production",
+  "PRODUCTION_DB_NAME": "app"
+```
+
+Because `_DB_PASS_SOURCE` takes precedence over `_DB_PASS`, you can add the new
+line, prove it works, then remove the old one, with nothing broken in between:
+
+```bash
+mysql-query-mcp credentials set production   # stores it, prints the line to paste
+# add PRODUCTION_DB_PASS_SOURCE to your config, leave PRODUCTION_DB_PASS for now
+mysql-query-mcp doctor                       # confirm it says: production ... keychain  resolved
+# now delete PRODUCTION_DB_PASS, and restart your AI tool
+```
+
+Then rotate the old password. Moving it out of a file does not un-leak it, since
+that value may still be in your shell history, an editor backup, or a previous
+chat transcript.
+
+**[docs/MIGRATION.md](docs/MIGRATION.md) has the full guide**, including recipes
+for getting an existing password into 1Password, Vault, AWS Secrets Manager, and
+SSM without putting it in your shell history, plus rollback and what to do when a
+source does not resolve.
 
 ## Configuration Options
 
@@ -139,7 +255,8 @@ Choose the approach that best fits your workflow. Both methods will work correct
 | DEBUG | Enable debug logging | false |
 | [ENV]_DB_HOST | Database host for environment | - |
 | [ENV]_DB_USER | Database username | - |
-| [ENV]_DB_PASS | Database password | - |
+| [ENV]_DB_PASS | Database password, in plaintext. Prefer [ENV]_DB_PASS_SOURCE | - |
+| [ENV]_DB_PASS_SOURCE | Where to read the password from. See [Credential Sources](#credential-sources) | - |
 | [ENV]_DB_NAME | Database name | - |
 | [ENV]_DB_PORT | Database port | 3306 |
 | [ENV]_DB_SSL | Enable SSL connection | false |
@@ -246,6 +363,37 @@ List all configured environments from your configuration:
 Use the environments tool to show me which database environments are available.
 ```
 
+Returns the environment name, where its password came from, and whether it is
+ready to query:
+
+```json
+{
+  "environments": [
+    { "name": "local", "credentialSource": "env", "status": "ready" },
+    { "name": "production", "credentialSource": "keychain", "status": "ready" }
+  ],
+  "count": 2
+}
+```
+
+A `status` of `credential-error` means the credential source failed. The reason
+is deliberately not included here, because it can quote output from your secret
+manager and this response goes into a chat transcript. Run
+`mysql-query-mcp doctor` or check the server log for the reason.
+
+## Command Line
+
+```bash
+mysql-query-mcp doctor                      # check config and credential sources
+mysql-query-mcp credentials set production  # store a password in the OS keychain
+mysql-query-mcp --help                      # all options and credential sources
+mysql-query-mcp --version
+```
+
+`doctor` reports every environment, which are complete, where each password
+comes from, and whether it resolves. It never prints a credential and exits
+non-zero if any source failed, so it is usable in a setup script.
+
 ## Security Considerations
 
 - ✅ Only read-only queries are allowed (SELECT, SHOW, DESCRIBE)
@@ -254,8 +402,9 @@ Use the environments tool to show me which database environments are available.
 - ✅ Query timeouts prevent runaway operations
 - ✅ Tool responses never include configuration values, and are checked for secrets before
   being returned
-- ⚠️ Credentials are still configured as plaintext environment variables in your MCP client
-  config. Keep that file out of version control
+- ✅ Passwords can be read from your OS keychain, a secret manager, or AWS instead of being
+  stored in your config file. See [Credential Sources](#credential-sources)
+- ⚠️ If you use plaintext `[ENV]_DB_PASS`, keep that config file out of version control
 
 ### If you used a version before 1.3.0
 
@@ -285,6 +434,8 @@ If you're having trouble connecting:
 - Verify your SQL syntax
 - Check that you're only using supported query types (SELECT, SHOW, DESCRIBE)
 - Ensure your query is truly read-only
+
+To move existing passwords out of your config file, see the [Migration Guide](docs/MIGRATION.md).
 
 For more comprehensive troubleshooting, see the [Troubleshooting Guide](docs/TROUBLESHOOTING.md).
 

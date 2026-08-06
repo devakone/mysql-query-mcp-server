@@ -65,8 +65,10 @@ describe('database pool options', () => {
 
     const { initializePools } = await import('../../src/db/pools.js');
 
-    initializePools();
-    initializePools();
+    // Initialization is asynchronous now that a credential source may shell out
+    // to a keychain or call AWS, so both calls have to be awaited.
+    await initializePools();
+    await initializePools();
 
     expect(createPool).toHaveBeenCalledTimes(1);
   });

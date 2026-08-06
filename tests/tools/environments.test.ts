@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { runEnvironmentsTool } from '../../src/tools/environments.js';
+import { initializePools, resetPoolsForTesting } from '../../src/db/pools.js';
 import { Environment } from '../../src/types/index.js';
 
 describe('environments tool', () => {
@@ -18,11 +19,13 @@ describe('environments tool', () => {
 
     // Mock stderr to suppress debug output during tests
     vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+    resetPoolsForTesting();
   });
 
   afterEach(() => {
     process.env = originalEnv;
     vi.restoreAllMocks();
+    resetPoolsForTesting();
   });
 
   const namesFrom = (text: string) =>
@@ -79,13 +82,39 @@ describe('environments tool', () => {
     process.env.LOCAL_DB_NAME = 'test';
     process.env.LOCAL_DB_PASS = 'local-password';
 
+    await initializePools();
+
     const result = await runEnvironmentsTool();
     const parsedContent = JSON.parse(result.content[0].text);
 
     expect(parsedContent.environments[0]).toEqual({
       name: 'local',
       credentialSource: 'env',
+      status: 'ready',
     });
+  });
+
+  it('should report a credential source failure as a status, without the reason', async () => {
+    process.env.PRODUCTION_DB_HOST = 'prod.example.com';
+    process.env.PRODUCTION_DB_USER = 'mcp_user';
+    process.env.PRODUCTION_DB_NAME = 'app';
+    process.env.PRODUCTION_DB_PASS_SOURCE = 'cmd:exit 1';
+
+    await initializePools();
+
+    const result = await runEnvironmentsTool();
+    const text = result.content[0].text;
+    const entry = JSON.parse(text).environments[0];
+
+    expect(entry).toEqual({
+      name: 'production',
+      credentialSource: 'cmd',
+      status: 'credential-error',
+    });
+    // A resolver's error text can quote whatever the underlying tool printed,
+    // and this response goes into a chat transcript.
+    expect(text).not.toContain('exit');
+    expect(text).not.toContain('Command failed');
   });
 
   it('should never return configuration values', async () => {

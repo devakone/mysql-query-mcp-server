@@ -60,8 +60,33 @@ export interface SecretFinding {
 }
 
 /**
- * Collects the literal values this process must never emit, keyed by the env
- * var they came from. Read fresh on every call so that tests and late-loaded
+ * Secrets that did not come from the environment, and so cannot be found by
+ * scanning process.env: anything a credential provider resolved at startup from
+ * a keychain, a helper command, or a cloud secrets manager.
+ *
+ * Without this, the guard and the logger would silently stop protecting
+ * passwords the moment a user moved off plaintext env vars, which is exactly
+ * the direction we want them to move.
+ */
+const registeredSecrets = new Set<string>();
+
+/**
+ * Marks a resolved credential as something that must never be emitted. Safe to
+ * call more than once with the same value.
+ */
+export function registerSecret(value: string | undefined): void {
+  if (!value || value.length < MIN_SECRET_VALUE_LENGTH) return;
+  registeredSecrets.add(value);
+}
+
+/** Test seam. Production code never needs to forget a secret. */
+export function clearRegisteredSecrets(): void {
+  registeredSecrets.clear();
+}
+
+/**
+ * Collects the literal values this process must never emit, keyed by where they
+ * came from. Read fresh on every call so that tests and late-loaded
  * configuration are picked up.
  */
 export function collectSecretValues(env: NodeJS.ProcessEnv = process.env): Map<string, string> {
@@ -71,6 +96,11 @@ export function collectSecretValues(env: NodeJS.ProcessEnv = process.env): Map<s
     if (!value || value.length < MIN_SECRET_VALUE_LENGTH) continue;
     if (!SECRET_NAME_PATTERN.test(name)) continue;
     values.set(name, value);
+  }
+
+  let index = 0;
+  for (const value of registeredSecrets) {
+    values.set(`resolved-credential-${++index}`, value);
   }
 
   return values;
