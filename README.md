@@ -218,17 +218,35 @@ npm install -g mysql-query-mcp-server @aws-sdk/client-secrets-manager
 
 ### Migrating from inline passwords
 
-Existing configs keep working, so this can be done one environment at a time.
+Already using `[ENV]_DB_PASS`? Nothing breaks, and you can migrate one
+environment at a time. Only the password line changes:
 
-1. `mysql-query-mcp credentials set production`
-2. Replace `"PRODUCTION_DB_PASS": "..."` with the `PRODUCTION_DB_PASS_SOURCE`
-   line it prints.
-3. `mysql-query-mcp doctor` to confirm it resolves.
-4. Restart your AI tool so the MCP server picks up the new config.
+```diff
+  "PRODUCTION_DB_HOST": "prod.example.com",
+  "PRODUCTION_DB_USER": "mcp_user",
+- "PRODUCTION_DB_PASS": "actual-production-password",
++ "PRODUCTION_DB_PASS_SOURCE": "keychain://mysql-query-mcp/production",
+  "PRODUCTION_DB_NAME": "app"
+```
 
-Rotate any password that has been sitting in a config file, since it may be in
-your shell history, an editor backup, or a previous chat transcript. See
-[SECURITY.md](SECURITY.md).
+Because `_DB_PASS_SOURCE` takes precedence over `_DB_PASS`, you can add the new
+line, prove it works, then remove the old one, with nothing broken in between:
+
+```bash
+mysql-query-mcp credentials set production   # stores it, prints the line to paste
+# add PRODUCTION_DB_PASS_SOURCE to your config, leave PRODUCTION_DB_PASS for now
+mysql-query-mcp doctor                       # confirm it says: production ... keychain  resolved
+# now delete PRODUCTION_DB_PASS, and restart your AI tool
+```
+
+Then rotate the old password. Moving it out of a file does not un-leak it, since
+that value may still be in your shell history, an editor backup, or a previous
+chat transcript.
+
+**[docs/MIGRATION.md](docs/MIGRATION.md) has the full guide**, including recipes
+for getting an existing password into 1Password, Vault, AWS Secrets Manager, and
+SSM without putting it in your shell history, plus rollback and what to do when a
+source does not resolve.
 
 ## Configuration Options
 
@@ -416,6 +434,8 @@ If you're having trouble connecting:
 - Verify your SQL syntax
 - Check that you're only using supported query types (SELECT, SHOW, DESCRIBE)
 - Ensure your query is truly read-only
+
+To move existing passwords out of your config file, see the [Migration Guide](docs/MIGRATION.md).
 
 For more comprehensive troubleshooting, see the [Troubleshooting Guide](docs/TROUBLESHOOTING.md).
 

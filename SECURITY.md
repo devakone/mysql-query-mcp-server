@@ -12,8 +12,9 @@ Since 1.4.0 a password does not have to live in your MCP client config file. Set
 `[ENV]_DB_PASS_SOURCE` to a reference instead and it is fetched at startup from
 your OS keychain, a secret manager command, AWS Secrets Manager, or SSM
 Parameter Store. See
-[Credential Sources](README.md#credential-sources) for setup, and run
-`mysql-query-mcp doctor` to check it.
+[Credential Sources](README.md#credential-sources) for setup,
+[docs/MIGRATION.md](docs/MIGRATION.md) for moving an existing password out of a
+config file, and run `mysql-query-mcp doctor` to check it.
 
 Plaintext `[ENV]_DB_PASS` still works and is the documented path for a throwaway
 local database. Using it for `production` logs a warning on startup.

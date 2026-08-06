@@ -135,6 +135,8 @@ PRODUCTION_DB_HOST=prod.example.com  # Correct: "PRODUCTION" is recognized
    - Treated as a failure on purpose, since an empty password would fail at connection time with a much less obvious error
    - Check the reference points at the right field, for example `#password` on a JSON secret
 
+For step-by-step setup of each source, see the [Migration Guide](MIGRATION.md).
+
 ### Problem: SSL connection errors
 
 **Symptoms:**
